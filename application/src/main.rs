@@ -535,6 +535,12 @@ fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
         let (base_path, name) = file_name(data.name.clone(), data.base_path.clone());
         data.name = (*name.clone()).to_string();
 
+        let actual_delay = if data.delay == 0.0 { 
+            1.0  // Force at least 1 second delay to let window hide
+        } else { 
+            data.delay 
+        };
+
         ctx.submit_command(
             SAVE_SCREENSHOT
                 .with((
@@ -547,7 +553,7 @@ fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
                     name,
                     image::ImageFormat::from_extension(data.extension.trim_start_matches("."))
                         .unwrap(),
-                    data.delay as u64,
+                    actual_delay as u64,
                     std::str::FromStr::from_str(data.screen.trim_start_matches(".")).unwrap(),
                 ))
                 .to(Target::Widget(ctx.widget_id())),

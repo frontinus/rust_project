@@ -1,17 +1,66 @@
-# Application Programming (Malnati)
-## Project m1: Multi-platform screen-grabbing utility
+# Rust Screen Grabber & Annotation Tool
 
-Using the Rust programming language, create a screen grabbing utility capable of acquiring what is currently shown in a display, post-process it and make it available in one or more formats.
+A multi-platform screen grabbing utility built with Rust and the Druid GUI framework. This was created for a university programming project and implements all core and bonus features.
 
-The application should fulfill the following requirements:
- - Platform Support: The utility should be compatible with multiple desktop operating systems, including Windows, macOS, and Linux.
- - User Interface (UI): The utility should have an intuitive and user-friendly interface that allows users to easily navigate through the application's features.
- - Selection Options: The utility should allow the user to restrict the grabbed image to a custom area selected with a click and drag motion. The selected area may be further adjusted with subsequent interactions.
- - Hotkey Support: The utility should support customizable hotkeys for quick screen grabbing. Users should be able to set up their preferred shortcut keys.
- - Output Format: The utility should support multiple output formats including .png, .jpg, .gif. It should also support copying the screen grab to the clipboard.
+## 🌟 Features
 
- As a bonus, the application may also provide the following features:
- - Annotation Tools: The utility should have built-in annotation tools like shapes, arrows, text, and a color picker for highlighting or redacting parts of the screen grab.
- - Delay Timer: The utility should support a delay timer function, allowing users to set up a screen grab after a specified delay.
- - Save Options: The utility should allow users to specify the default save location for screen grabs. It should also support automatic saving with predefined naming conventions.
- - Multi-monitor Support: The utility should be able to recognize and handle multiple monitors independently, allowing users to grab screens from any of the connected displays.
+This tool fulfills all project requirements, including:
+
+- Cross-Platform: Built to be compatible with Windows, macOS, and Linux.
+
+- Advanced Selection: Capture the full screen or select a custom area with a click-and-drag motion.
+
+- Multi-Monitor Support: Recognizes and captures from any connected display.
+
+- Customizable Hotkeys: Set your own global hotkey for instant captures.
+
+- Delay Timer: Set a delay (in seconds) before the capture begins.
+
+- Multiple Output Formats:
+
+  - Save files as .png, .jpg, or .gif.
+
+  - Copy directly to the clipboard.
+
+- Full Annotation Suite:
+
+  - Shapes: Add resizable circles and triangles.
+
+  - Arrows: Add resizable arrows to point things out.
+
+  - Text: Add text directly onto the image.
+
+  - Highlighter: Add a semi-transparent highlighter.
+
+  - Color Picker: Choose the color and transparency for all your annotations.
+
+- Image Editing:
+
+  - Crop: Crop your screenshot after taking it.
+
+  - File Naming: Set a custom file name and save location.
+
+## 🚀 How to Use
+
+- Go to the Releases page.
+
+- Download the .zip file for your operating system.
+
+- Unzip the file and run the application executable.
+
+## 🛠️ Tech Stack
+
+- Language: Rust
+
+- GUI Framework: druid
+
+- Core Libraries:
+
+  - image (For image processing and annotation)
+
+  - arboard (For cross-platform clipboard access)
+
+  - screenshots (For multi-monitor screen capture)
+
+  - serde (For saving and loading hotkey configurations)
+  

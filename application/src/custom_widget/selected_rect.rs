@@ -266,28 +266,54 @@ impl Widget<Rect> for SelectedRect {
         _env: &Env,
     ) -> Size {
         bc.debug_check("SelectedRegion");
-        let overlay_padding = if self.show_overlay { 0.0 } else { BORDER_WIDTH };
-        let size = Size::new(
-            self.rect.x1 - self.rect.x0 + overlay_padding * 2.0,
-            self.rect.y1 - self.rect.y0 + overlay_padding * 2.0,
-        );
-        bc.constrain(size)
+        bc.constrain(self.fix_rect.size())
     }
 
     #[instrument(name = "SelectedRegion", level = "trace", skip(self, ctx, env))]
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &Rect, env: &Env) {
-        let rect = Rect {
-            x0: self.rect.x0,
-            y0: self.rect.y0,
-            x1: self.rect.x1,
-            y1: self.rect.y1,
-        };
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &Rect, env: &Env) {        
 
-        // Draw the overlay
+        // Get the full size of the widget (which is the whole screen)
+        let full_screen_rect = ctx.size().to_rect();
+
+        // 1. Draw the four overlay rectangles *around* the selection
+        let selected_rect = self.rect;
         let overlay_color = env.get(theme::BACKGROUND_DARK).with_alpha(0.5);
-        ctx.fill(rect, &overlay_color);
 
-        // Draw the selected rectangle border
+        // Top rect
+        let top_rect = Rect::new(
+            full_screen_rect.x0,
+            full_screen_rect.y0,
+            full_screen_rect.x1,
+            selected_rect.y0,
+        );
+        // Bottom rect
+        let bottom_rect = Rect::new(
+            full_screen_rect.x0,
+            selected_rect.y1,
+            full_screen_rect.x1,
+            full_screen_rect.y1,
+        );
+        // Left rect
+        let left_rect = Rect::new(
+            full_screen_rect.x0,
+            selected_rect.y0,
+            selected_rect.x0,
+            selected_rect.y1,
+        );
+        // Right rect
+        let right_rect = Rect::new(
+            selected_rect.x1,
+            selected_rect.y0,
+            full_screen_rect.x1,
+            selected_rect.y1,
+        );
+
+        ctx.fill(top_rect, &overlay_color);
+        ctx.fill(bottom_rect, &overlay_color);
+        ctx.fill(left_rect, &overlay_color);
+        ctx.fill(right_rect, &overlay_color);
+
+        // 2. Draw the border *around* the selection
         let border_color = if ctx.is_hot() && !ctx.is_disabled() {
             env.get(theme::BORDER_DARK)
         } else {
@@ -298,6 +324,6 @@ impl Widget<Rect> for SelectedRect {
             .line_join(LineJoin::Round)
             .line_cap(Default::default())
             .dash_offset(0.0);
-        ctx.stroke_styled(rect, &border_color, BORDER_WIDTH, &style);
+        ctx.stroke_styled(selected_rect, &border_color, BORDER_WIDTH, &style);
     }
 }
