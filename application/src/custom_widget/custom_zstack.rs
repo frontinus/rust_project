@@ -8,6 +8,8 @@ use druid::{
     LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Point, Rect, Selector, Size, Target, UnitPoint,
     UpdateCtx, Vec2, Widget, WidgetExt, WidgetId, WidgetPod,
 };
+use arboard::{Clipboard, ImageData};
+use std::borrow::Cow;
 use image::imageops::FilterType;
 use image::ImageReader as Reader;
 use image::{DynamicImage, GenericImage, GenericImageView, Pixel};
@@ -303,9 +305,29 @@ impl<T: Data> Widget<T> for CustomZStack<T> {
             Event::Command(cmd) => {
                 if cmd.is(commands::COPY) {
                     if let Some(image) = self.back_img.clone() {
+                        // Get the image data
                         let image_buffer = image.into_rgba8();
-                        let mut clipboard = clippers::Clipboard::get();
-                        clipboard.write_image(image_buffer.width(), image_buffer.height(), image_buffer.as_raw()).unwrap();
+                        let width = image_buffer.width() as usize;
+                        let height = image_buffer.height() as usize;
+                        let raw_data = image_buffer.into_raw(); // This is a Vec<u8>
+
+                        // Create the arboard ImageData struct
+                        let img_data = ImageData {
+                            width,
+                            height,
+                            // arboard expects the raw data wrapped in a 'Copy-on-Write'
+                            bytes: Cow::from(raw_data),
+                        };
+
+                        // Try to get the clipboard and set the image
+                        if let Ok(mut clipboard) = Clipboard::new() {
+                            if let Err(e) = clipboard.set_image(img_data) {
+                                // Added error handling in case it fails
+                                eprintln!("Error writing image to clipboard: {:?}", e);
+                            }
+                        } else {
+                            eprintln!("Error initializing clipboard");
+                        }
                     }
                 }
                 if cmd.is(SHOW_OVER_IMG) {
