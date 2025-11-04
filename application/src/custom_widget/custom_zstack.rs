@@ -9,11 +9,11 @@ use druid::{
     UpdateCtx, Vec2, Widget, WidgetExt, WidgetId, WidgetPod,
 };
 use image::imageops::FilterType;
-use image::io::Reader;
+use image::ImageReader as Reader;
 use image::{DynamicImage, GenericImage, GenericImageView, Pixel};
 use image::{ImageFormat as imgFormat, Rgba};
 use imageproc::drawing::draw_text_mut;
-use rusttype::{Font, Scale};
+use ab_glyph::{Font, FontVec, PxScale, ScaleFont};
 use std::sync::Arc;
 use crate::BASE_PATH_SCREENSHOT;
 
@@ -252,24 +252,33 @@ impl<T: Data> CustomZStack<T> {
     }
 }
 
-fn calculate_text_width(font: Font, scale: Scale, text: &str) -> u32 {
-    let mut width = 0;
+fn calculate_text_width(font: &FontVec, scale: PxScale, text: &str) -> u32 {
+    let scaled_font = font.as_scaled(scale);
+    let mut width: f32  = 0.0; 
+    let mut last_glyph_id = None;
 
     for c in text.chars() {
-        let glyph = font.glyph(c).scaled(scale);
-        width += glyph.h_metrics().advance_width.ceil() as u32;
+        let glyph_id = font.glyph_id(c);
+        if let Some(last_id) = last_glyph_id {
+            width += scaled_font.kern(last_id, glyph_id);
+        }
+        width += scaled_font.h_advance(glyph_id);
+        last_glyph_id = Some(glyph_id);
     }
 
-    width
+    width.ceil() as u32
 }
 
 fn text_to_image(text: &str, color: Option<Color>) -> DynamicImage {
     let font_data: &[u8] = include_bytes!("../images/icons/DejaVuSans.ttf");
-    let font = Font::try_from_bytes(font_data).unwrap();
+    // Use FontVec to load the font
+    let font = FontVec::try_from_vec(font_data.to_vec()).unwrap(); 
 
-    let scale = Scale::uniform(30.0);
+    // Use PxScale from f32
+    let scale = PxScale::from(30.0);
 
-    let width = calculate_text_width(font.clone(), scale, text);
+    // Pass the font by reference
+    let width = calculate_text_width(&font, scale, text);
     let height = 25;
     let mut image = DynamicImage::new_rgba8(width, height);
 
@@ -280,8 +289,8 @@ fn text_to_image(text: &str, color: Option<Color>) -> DynamicImage {
         Rgba([colors.0, colors.1, colors.2, colors.3]),
         0,
         0,
-        scale,
-        &font,
+        scale, // This is now a PxScale, which draw_text_mut accepts
+        &font, // This is now a &FontVec, which implements the 'Font' trait
         text,
     );
 

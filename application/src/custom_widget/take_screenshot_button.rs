@@ -5,7 +5,7 @@ use druid::debug_state::DebugState;
 use druid::widget::prelude::*;
 use druid::widget::{Click, ControllerHost, Label, LabelText};
 use druid::{commands as sys_cmd, theme, Affine, Data, Insets, LinearGradient, UnitPoint, Color, Rect, WindowId, Selector};
-use image::{DynamicImage, ImageFormat};
+use image::{DynamicImage, ImageFormat, RgbaImage};
 use screenshots::{Screen};
 use tracing::{instrument, trace};
 use crate::BASE_PATH_SCREENSHOT;
@@ -286,9 +286,19 @@ fn save_screenshot(rect: &Rect, base_path: Box<str>, file_name: Box<str>, format
     let screen = screens.get(monitor).expect("Can't find the selected monitor!");
     let image = screen.capture_area(rect.x0 as i32, rect.y0 as i32, rect.width() as u32, rect.height() as u32).unwrap();
 
-    let dyn_img = DynamicImage::from(
-        image.clone()
-    );
+    let width = image.width();
+    let height = image.height();
+    // Get the raw pixel vector
+    let raw_pixels = image.to_vec();
+
+    // Create a new image::ImageBuffer from the raw data
+    // This uses the RgbaImage type alias we imported
+    let img_buf = RgbaImage::from_raw(width as u32, height as u32, raw_pixels)
+        .expect("Failed to create ImageBuffer from raw screenshot data");
+
+    // NOW this conversion will work, because it's converting from an
+    // image::ImageBuffer, not a screenshots::ImageBuffer
+    let dyn_img = DynamicImage::from(img_buf);
 
     // it verify if exists the dir before saving the image
     verify_exists_dir(BASE_PATH_SCREENSHOT);

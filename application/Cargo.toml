@@ -8,17 +8,17 @@ authors = ["Pietro Bertorelle","Francesco Abate","Elio Magliari"]
 
 [dependencies]
 druid-shell = "0.8.3"
-image = "0.24.6"
-random-string = "1.0.0"
-screenshots = "0.8.0"
-tracing = "0.1.37"
-lazy_static = "1.4.0"
+image = "0.25.8"
+random-string = "1.1.0"
+screenshots = "0.8.10"
+tracing = "0.1.41"
+lazy_static = "1.5.0"
 clippers = "0.1.2"
-imageproc="0.23.0"
-rusttype="0.9.3"
-serde = "1.0.188"
-serde_json = "1.0.107"
+imageproc="0.25.0"
+serde = "1.0.228"
+serde_json = "1.0.145"
 flate2 = "1.0.27"
+ab_glyph = "0.2.32"
 [dependencies.druid]
 version = "0.8.3"
 features = ["im","svg","image-all","image","serde"]

@@ -15,7 +15,7 @@ use druid::{
     ImageBuf, Lens, LocalizedString, Menu, MenuItem, Point, Rect, Screen, Size, Target,
     TextAlignment, UnitPoint, Vec2, Widget, WidgetExt, WidgetId, WindowDesc, WindowId, WindowState,
 };
-use image::io::Reader;
+use image::ImageReader as Reader;
 use random_string::generate;
 use std::collections::HashSet;
 use std::path::Path;
