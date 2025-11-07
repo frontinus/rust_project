@@ -116,6 +116,7 @@ impl Widget<Rect> for SelectedRect {
                 self.reset_rect(rect);
                 ctx.set_handled();
             }
+
             Event::MouseDown(me) => {
                 ctx.set_active(true);
                 self.mouse = self.where_mouse_is(me);
@@ -230,17 +231,32 @@ impl Widget<Rect> for SelectedRect {
     }
 
     #[instrument(
-        name = "SelectedRegion",
-        level = "trace",
-        skip(self, ctx, event, _data, _env)
-    )]
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _data: &Rect, _env: &Env) {
-        if let LifeCycle::HotChanged(_)
-        | LifeCycle::DisabledChanged(_)
-        | LifeCycle::ViewContextChanged(_)
-        | LifeCycle::FocusChanged(_) = event
-        {
-            ctx.request_paint();
+    name = "SelectedRegion",
+    level = "trace",
+    skip(self, ctx, event, _data, _env)
+)]
+fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, _data: &Rect, _env: &Env) {
+        match event {
+            LifeCycle::WidgetAdded => {
+                // Get the ACTUAL window size, not the monitor size
+                let window_size = ctx.window().get_size();
+                
+                // Update the rect to match actual window bounds
+                self.rect = Rect {
+                    x0: 0.,
+                    y0: 0.,
+                    x1: window_size.width,
+                    y1: window_size.height,
+                };
+                self.fix_rect = self.rect;
+            }
+            LifeCycle::HotChanged(_)
+            | LifeCycle::DisabledChanged(_)
+            | LifeCycle::ViewContextChanged(_)
+            | LifeCycle::FocusChanged(_) => {
+                ctx.request_paint();
+            }
+            _ => {}
         }
     }
 
@@ -266,12 +282,32 @@ impl Widget<Rect> for SelectedRect {
         _env: &Env,
     ) -> Size {
         bc.debug_check("SelectedRegion");
-        bc.constrain(self.fix_rect.size())
+        
+        // Use the constrained size as the maximum bounds
+        let available_size = bc.max();
+        
+        // Initialize rect to full available size if not set
+        if self.rect.width() > available_size.width || self.rect.height() > available_size.height {
+            self.rect = Rect {
+                x0: 0.,
+                y0: 0.,
+                x1: available_size.width,
+                y1: available_size.height,
+            };
+            self.fix_rect = self.rect;
+        }
+        
+        let overlay_padding = if self.show_overlay { 0.0 } else { BORDER_WIDTH };
+        let size = Size::new(
+            self.rect.x1 - self.rect.x0 + overlay_padding * 2.0,
+            self.rect.y1 - self.rect.y0 + overlay_padding * 2.0,
+        );
+        bc.constrain(size)
     }
 
     #[instrument(name = "SelectedRegion", level = "trace", skip(self, ctx, env))]
     fn paint(&mut self, ctx: &mut PaintCtx, data: &Rect, env: &Env) {        
-
+        
         // Get the full size of the widget (which is the whole screen)
         let full_screen_rect = ctx.size().to_rect();
 

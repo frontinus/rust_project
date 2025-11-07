@@ -284,23 +284,36 @@ impl<T: Data> Widget<T> for TakeScreenshotButton<T> {
 fn save_screenshot(rect: &Rect, base_path: Box<str>, file_name: Box<str>, format: ImageFormat, monitor: usize) -> DynamicImage{
     let screens = Screen::all().unwrap();
     let screen = screens.get(monitor).expect("Can't find the selected monitor!");
-    let image = screen.capture_area(rect.x0 as i32, rect.y0 as i32, rect.width() as u32, rect.height() as u32).unwrap();
+    
+    // Get the monitor's actual resolution
+    let monitors = druid::Screen::get_monitors();
+    let mut sorted_monitors = monitors.clone();
+    sorted_monitors.sort_by_key(|m| !m.is_primary());
+    let monitor_rect = sorted_monitors.get(monitor).unwrap().virtual_rect();
+    
+    // Calculate DPI scale factor
+    let scale_x = monitor_rect.width() / rect.width();
+    let scale_y = monitor_rect.height() / rect.height();
+    
+    
+    // Scale the rectangle to screen coordinates
+    let x = (rect.x0 * scale_x).round() as i32;
+    let y = (rect.y0 * scale_y).round() as i32;
+    let width = (rect.width() * scale_x).round() as u32;
+    let height = (rect.height() * scale_y).round() as u32;
+    
+    
+    let image = screen.capture_area(x, y, width, height).unwrap();
 
     let width = image.width();
     let height = image.height();
-    // Get the raw pixel vector
     let raw_pixels = image.to_vec();
 
-    // Create a new image::ImageBuffer from the raw data
-    // This uses the RgbaImage type alias we imported
     let img_buf = RgbaImage::from_raw(width as u32, height as u32, raw_pixels)
         .expect("Failed to create ImageBuffer from raw screenshot data");
 
-    // NOW this conversion will work, because it's converting from an
-    // image::ImageBuffer, not a screenshots::ImageBuffer
     let dyn_img = DynamicImage::from(img_buf);
 
-    // it verify if exists the dir before saving the image
     verify_exists_dir(BASE_PATH_SCREENSHOT);
 
     let path = format!("{}{}.{}", base_path, file_name, format.extensions_str().first().unwrap());

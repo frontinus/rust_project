@@ -95,7 +95,7 @@ fn main() {
         .title("Welcome!")
         .menu(make_menu)
         .with_min_size((1200., 670.))
-        .set_window_state(WindowState::Maximized)
+        //.set_window_state(WindowState::Maximized)
         .set_position((50., 20.));
 
     // create the initial app state
@@ -260,8 +260,8 @@ impl AppDelegate<AppState> for Delegate {
                             .transparent(true)
                             .resizable(false)
                             .show_titlebar(false)
-                            .window_size((monitor.virtual_rect().x1, monitor.virtual_rect().y1))
-                            .set_window_state(WindowState::Maximized)
+                            .window_size((monitor.virtual_rect().width(), monitor.virtual_rect().height()))
+                            //.set_window_state(WindowState::Maximized)
                             .set_position(monitor.virtual_rect().origin()),
                     );
                     ctx.submit_command(
@@ -517,6 +517,9 @@ fn alert_widget() -> impl Widget<AppState> {
 }
 
 fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
+    let mut monitors = Screen::get_monitors();
+    monitors.sort_by_key(|monitor| !monitor.is_primary());
+    let mon = monitors.get(monitor).unwrap();
     let rectangle = LensWrap::new(SelectedRect::new(monitor), AppState::rect);
 
     let take_screenshot_button = TakeScreenshotButton::from_label(
@@ -541,10 +544,26 @@ fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
             data.delay 
         };
 
+        // Get the window position to calculate absolute screen coordinates
+        let mut monitors = Screen::get_monitors();
+        monitors.sort_by_key(|monitor| !monitor.is_primary());
+        let index: usize = std::str::FromStr::from_str(data.screen.trim_start_matches(".")).unwrap();
+        let monitor = monitors.get(index).unwrap();
+        let monitor_origin = monitor.virtual_rect().origin();
+        
+        // Adjust rect to absolute screen coordinates
+        let absolute_rect = Rect::new(
+            data.rect.x0 + monitor_origin.x,
+            data.rect.y0 + monitor_origin.y,
+            data.rect.x1 + monitor_origin.x,
+            data.rect.y1 + monitor_origin.y,
+        );
+
+
         ctx.submit_command(
             SAVE_SCREENSHOT
                 .with((
-                    data.rect,
+                    absolute_rect,//data.rect,
                     data.main_window_id.expect("How did you open this window?"),
                     data.custom_zstack_id
                         .expect("How did you open this window?"),
@@ -602,11 +621,11 @@ fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
         .with_child(close_button);
 
     let zstack = ZStack::new(rectangle).with_child(
-        buttons_flex,
-        Vec2::new(1.0, 1.0),
-        Vec2::ZERO,
-        UnitPoint::BOTTOM_RIGHT,
-        Vec2::new(-100.0, -100.0),
+    buttons_flex,
+    Vec2::new(1.0, 1.0),
+    Vec2::ZERO,
+    UnitPoint::BOTTOM_RIGHT,
+    Vec2::new(-100.0, -100.0),
     );
 
     zstack
@@ -658,8 +677,8 @@ fn build_root_widget() -> impl Widget<AppState> {
                     .resizable(false)
                     .show_titlebar(false)
                     .set_position(monitor.virtual_rect().origin())
-                    .window_size((monitor.virtual_rect().x1, monitor.virtual_rect().y1))
-                    .set_window_state(WindowState::Maximized),
+                    .window_size((monitor.virtual_rect().width(), monitor.virtual_rect().height()))
+                    //.set_window_state(WindowState::Maximized),
             );
 
             ctx.submit_command(
