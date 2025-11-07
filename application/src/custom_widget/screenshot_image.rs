@@ -146,28 +146,37 @@ impl<T: Data> Widget<T> for ScreenshotImage {
                     ctx.request_paint();
                 }
                 if cmd.is(UPDATE_SCREENSHOT_CROP) {
-                    let (rect_crop, path,file_name,file_format, custom_zstack_id) = cmd.get_unchecked(UPDATE_SCREENSHOT_CROP);
+                    let (rect_crop, path, file_name, file_format, custom_zstack_id) = cmd.get_unchecked(UPDATE_SCREENSHOT_CROP);
                     let screen_img = self.image_data_arc.clone().unwrap();
 
-                    // it checks if the rect is inside the size of the image
-                    if rect_crop.width() as u32 >= (*screen_img).width()
-                        || rect_crop.height() as u32 >= (*screen_img).height()
-                        || rect_crop.x1 as u32 >= (*screen_img).width()
-                        || rect_crop.y1 as u32 >= (*screen_img).height()
-                        || rect_crop.x0 as u32 >= (*screen_img).width()
-                        || rect_crop.y0 as u32 >= (*screen_img).height()
-                    {
+                    // Calculate scale factor between image and displayed widget
+                    let scale_x = screen_img.width() as f64 / ctx.size().width;
+                    let scale_y = screen_img.height() as f64 / ctx.size().height;
+                    
+                    // Scale the crop rectangle to image coordinates
+                    let x0 = (rect_crop.x0 * scale_x).max(0.0).round() as u32;
+                    let y0 = (rect_crop.y0 * scale_y).max(0.0).round() as u32;
+                    let x1 = (rect_crop.x1 * scale_x).min(screen_img.width() as f64).round() as u32;
+                    let y1 = (rect_crop.y1 * scale_y).min(screen_img.height() as f64).round() as u32;
+                    
+                    let width = x1 - x0;
+                    let height = y1 - y0;
+                    
+                    
+                    // Bounds check
+                    if x0 >= screen_img.width() || y0 >= screen_img.height() || width == 0 || height == 0 {
+                        println!("  ERROR: Invalid crop coordinates!");
                         let screen_img_rect = Rect {
                             x0: 0.,
                             y0: 0.,
                             x1: screen_img.width() as f64,
                             y1: screen_img.height() as f64
                         };
-                        ctx.submit_command(UPDATE_RECT_SIZE.with(screen_img_rect)); // reset of the rect
+                        ctx.submit_command(UPDATE_RECT_SIZE.with(screen_img_rect));
                         return;
                     }
 
-                    let img_resized = (*screen_img).clone().crop(rect_crop.x0 as u32, rect_crop.y0 as u32, rect_crop.x1 as u32, rect_crop.y1 as u32);
+                    let img_resized = (*screen_img).clone().crop(x0, y0, width, height);
 
                     let screen_img_rect = Rect {
                         x0: 0.,
@@ -175,7 +184,7 @@ impl<T: Data> Widget<T> for ScreenshotImage {
                         x1: img_resized.width() as f64,
                         y1: img_resized.height() as f64
                     };
-                    ctx.submit_command(UPDATE_RECT_SIZE.with(screen_img_rect)); // reset of the rect
+                    ctx.submit_command(UPDATE_RECT_SIZE.with(screen_img_rect));
 
                     self.set_image_data(ImageBuf::from_raw(
                         Arc::<[u8]>::from(img_resized.as_bytes()),
@@ -184,7 +193,6 @@ impl<T: Data> Widget<T> for ScreenshotImage {
                         img_resized.height() as usize,
                     ));
 
-                    // it verify if exists the dir before saving the image
                     verify_exists_dir(BASE_PATH_SCREENSHOT);
 
                     let path = format!("{}{}.{}", path, file_name, file_format.extensions_str().first().unwrap());
@@ -200,6 +208,7 @@ impl<T: Data> Widget<T> for ScreenshotImage {
                     ctx.request_layout();
                     ctx.request_paint();
                 }
+
                 if cmd.is(UPDATE_SCREENSHOT_CROP_CLOSE) {
                     match self.image_data_arc.clone() {
                         Some(screen_img) => {
