@@ -519,16 +519,15 @@ fn alert_widget() -> impl Widget<AppState> {
 fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
     let mut monitors = Screen::get_monitors();
     monitors.sort_by_key(|monitor| !monitor.is_primary());
-    let mon = monitors.get(monitor).unwrap();
     let rectangle = LensWrap::new(SelectedRect::new(monitor), AppState::rect);
 
     let take_screenshot_button = TakeScreenshotButton::from_label(
-        Label::new("Take Screenshot")
-            .with_text_color(Color::BLACK)
-            .with_font(FontDescriptor::new(FontFamily::MONOSPACE))
-            .with_text_size(20.),
+        Label::new("📸 Capture")
+            .with_text_color(Color::WHITE)
+            .with_font(FontDescriptor::new(FontFamily::SANS_SERIF).with_weight(druid::FontWeight::BOLD))
+            .with_text_size(18.),
     )
-    .with_color(Color::rgb8(70, 250, 70).with_alpha(1.))
+    .with_color(Color::rgb8(34, 197, 94).with_alpha(0.95))
     .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
         data.shortcut_keys.state = StateShortcutKeys::NotBusy; // reset of shortcut state
 
@@ -593,12 +592,12 @@ fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
         .lens(AppState::delay);
 
     let close_button = ColoredButton::from_label(
-        Label::new("Close")
-            .with_text_color(Color::BLACK)
-            .with_font(FontDescriptor::new(FontFamily::MONOSPACE))
-            .with_text_size(20.),
+        Label::new("✕ Cancel")
+            .with_text_color(Color::WHITE)
+            .with_font(FontDescriptor::new(FontFamily::SANS_SERIF).with_weight(druid::FontWeight::BOLD))
+            .with_text_size(18.),
     )
-    .with_color(Color::rgb8(250, 70, 70).with_alpha(1.))
+    .with_color(Color::rgb8(239, 68, 68).with_alpha(0.95))
     .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
         let main_id = data.main_window_id.expect("How did you open this window?");
 
@@ -618,7 +617,9 @@ fn build_screenshot_widget(monitor: usize) -> impl Widget<AppState> {
         .with_child(delay_value)
         .with_child(delay_stepper)
         .with_default_spacer()
-        .with_child(close_button);
+        .with_child(close_button)
+        .with_default_spacer()
+        .padding(15.);
 
     let zstack = ZStack::new(rectangle).with_child(
     buttons_flex,
@@ -640,10 +641,13 @@ fn build_root_widget() -> impl Widget<AppState> {
     let take_screenshot_button = Either::new(
         |data: &AppState, _env| data.crop_screenshot_enabled == false,
         ColoredButton::from_label(Label::new(|data: &AppState, _env: &_| match data.state {
-            State::Start => "Take Screenshot",
-            State::ScreenTaken(_) => "New Screenshot",
-        }))
-        .with_color(Color::rgb(160. / 256., 0., 0.))
+            State::Start => "📸 Take Screenshot",
+            State::ScreenTaken(_) => "📸 New Screenshot",
+        }).with_text_color(Color::WHITE)
+        .with_font(FontDescriptor::new(FontFamily::SANS_SERIF).with_weight(druid::FontWeight::BOLD))
+        .with_text_size(16.)
+        )
+        .with_color(Color::rgb8(100, 120, 220))
         .on_click(move |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
             data.main_window_id = Some(ctx.window_id());
             data.custom_zstack_id = Some(*ZSTACK_ID);
@@ -854,7 +858,7 @@ fn build_root_widget() -> impl Widget<AppState> {
         |data: &AppState, _env| data.state == State::ScreenTaken(ImageModified::NotSavable),
         Either::new(
             |data: &AppState, _env| data.crop_screenshot_enabled == false,
-            ColoredButton::from_label(Label::new("Crop ScreenShot"))
+            ColoredButton::from_label(Label::new("✂️ Crop ScreenShot"))
                 .with_color(Color::rgb(0., 0., 255.))
                 .on_click(move |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                     data.main_window_id = Some(ctx.window_id());
@@ -1013,7 +1017,7 @@ fn build_root_widget() -> impl Widget<AppState> {
 
     let circle_button = Either::new(
         |data: &AppState, _env| data.state == State::ScreenTaken(ImageModified::NotSavable),
-        Button::from_label(Label::new("⭕")).on_click(
+        Button::from_label(Label::new("⭕ Circle").with_text_size(14.)).on_click(
             move |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                 ctx.submit_command(
                     SHOW_OVER_IMG
@@ -1028,7 +1032,7 @@ fn build_root_widget() -> impl Widget<AppState> {
 
     let triangle_button = Either::new(
         |data: &AppState, _env| data.state == State::ScreenTaken(ImageModified::NotSavable),
-        Button::from_label(Label::new("△")).on_click(
+        Button::from_label(Label::new("🔺 Triangle").with_text_size(14.)).on_click(
             move |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                 ctx.submit_command(
                     SHOW_OVER_IMG
@@ -1042,7 +1046,7 @@ fn build_root_widget() -> impl Widget<AppState> {
     );
     let arrow_button = Either::new(
         |data: &AppState, _env| data.state == State::ScreenTaken(ImageModified::NotSavable),
-        Button::from_label(Label::new("→")).on_click(
+        Button::from_label(Label::new("➡️ Arrow").with_text_size(14.)).on_click(
             move |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                 ctx.submit_command(
                     SHOW_OVER_IMG
@@ -1077,7 +1081,7 @@ fn build_root_widget() -> impl Widget<AppState> {
         Flex::row()
             .with_child(
                 druid::widget::TextBox::new()
-                    .with_placeholder("Enter a text")
+                    .with_placeholder("✏️ Enter a text")
                     .fix_width(150.)
                     .lens(AppState::text_field),
             )
@@ -1112,7 +1116,7 @@ fn build_root_widget() -> impl Widget<AppState> {
 
     let text_button = Either::new(
         |data: &AppState, _env| data.state == State::ScreenTaken(ImageModified::NotSavable),
-        Button::from_label(Label::new("Text")).on_click(
+        Button::from_label(Label::new("✏️ Text").with_text_size(14.)).on_click(
             move |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                 data.text_field_zstack = true;
                 ctx.submit_command(sys_cmd::SHOW_ALL);
